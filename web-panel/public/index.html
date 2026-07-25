@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Neo Palworld Command</title>
     <meta name="description" content="Connected web panel for Neo Palworld." />
-    <link rel="stylesheet" href="/styles.css?v=20260720-admin-route-2" />
+    <link rel="stylesheet" href="/styles.css?v=20260725-admin-command" />
   </head>
   <body>
     <div class="sky"></div>
@@ -143,70 +143,156 @@
         </div>
       </section>
 
-      <section id="admin" class="panel tab-panel">
-        <div class="section-head">
+      <section id="admin" class="panel tab-panel admin-panel">
+        <div class="admin-hero">
           <div>
-            <p class="eyebrow">ADMIN BRIDGE</p>
-            <h2>Server Control</h2>
+            <p class="eyebrow">OWNER COMMAND CENTER</p>
+            <h2>Neo Palworld Admin</h2>
+            <p class="muted">Monitor the live service, edit world settings, manage announcements, and run owner actions without opening the VPS menu.</p>
           </div>
-          <button class="ghost" id="adminRefresh">Refresh admin data</button>
+          <div class="admin-actions">
+            <button class="ghost" id="adminRefresh">Refresh</button>
+            <button class="primary" data-control="save">Save World</button>
+          </div>
         </div>
-        <div class="admin-grid">
-          <article class="glass">
-            <h3>Power</h3>
-            <div class="button-row">
-              <button data-control="save">Save</button>
-              <button data-control="backup">Backup</button>
-              <button data-control="restart">Restart</button>
-              <button data-control="stop">Stop</button>
-              <button data-control="start">Start</button>
-              <button data-control="update">Update</button>
-            </div>
-            <pre id="controlOutput"></pre>
-          </article>
-          <article class="glass">
-            <h3>Announcement</h3>
-            <form id="announceForm" class="form compact">
-              <textarea name="message" placeholder="Restart in 10 minutes. Join Discord for event rules." required></textarea>
-              <button class="primary" type="submit">Send announcement</button>
-            </form>
-          </article>
-          <article class="glass">
-            <h3>Presets</h3>
-            <form id="presetForm" class="form compact">
-              <select name="preset">
-                <option value="balanced">Balanced</option>
-                <option value="pve">PvE</option>
-                <option value="pvp">PvP</option>
-                <option value="boosted">Boosted</option>
-                <option value="builder">Builder</option>
-                <option value="breeding">Breeding</option>
-                <option value="event-weekend">Event Weekend</option>
-                <option value="raid">Raid</option>
-                <option value="no-raids">No Raids</option>
-                <option value="hardcore">Hardcore</option>
-              </select>
-              <button class="secondary" type="submit">Apply preset</button>
-            </form>
-          </article>
-          <article class="glass">
-            <h3>Common Settings</h3>
-            <form id="settingsForm" class="form compact">
-              <div class="form-grid">
-                <label>ServerName<input name="ServerName" /></label>
-                <label>ServerDescription<input name="ServerDescription" /></label>
-                <label>ExpRate<input name="ExpRate" type="number" step="0.1" /></label>
-                <label>PalCaptureRate<input name="PalCaptureRate" type="number" step="0.1" /></label>
-                <label>EnemyDropItemRate<input name="EnemyDropItemRate" type="number" step="0.1" /></label>
-                <label>PalEggDefaultHatchingTime<input name="PalEggDefaultHatchingTime" type="number" step="0.1" /></label>
-                <label>bIsPvP<select name="bIsPvP"><option value="">No change</option><option>True</option><option>False</option></select></label>
-                <label>bEnableInvaderEnemy<select name="bEnableInvaderEnemy"><option value="">No change</option><option>True</option><option>False</option></select></label>
+
+        <nav class="admin-subnav" aria-label="Admin sections">
+          <button class="active" data-admin-view="ops">Operations</button>
+          <button data-admin-view="settings">Settings</button>
+          <button data-admin-view="announcements">Announcements</button>
+          <button data-admin-view="players">Players</button>
+          <button data-admin-view="shop">Shop</button>
+          <button data-admin-view="activity">Activity</button>
+        </nav>
+
+        <div class="admin-view active" id="adminView-ops">
+          <div class="admin-metrics" id="adminMetrics"></div>
+          <div class="admin-layout">
+            <article class="glass command-card">
+              <div class="card-head">
+                <div>
+                  <p class="eyebrow">POWER</p>
+                  <h3>Server Actions</h3>
+                </div>
+                <span class="chip" id="adminServiceChip">Checking</span>
               </div>
-              <button class="primary" type="submit">Save settings</button>
-            </form>
+              <div class="command-grid">
+                <button data-control="backup">Backup</button>
+                <button data-control="restart">Restart Now</button>
+                <button data-control="stop">Stop</button>
+                <button data-control="start">Start</button>
+                <button data-control="update">Update</button>
+                <button data-control="doctor">Doctor</button>
+              </div>
+              <pre id="controlOutput"></pre>
+            </article>
+
+            <article class="glass command-card">
+              <div class="card-head">
+                <div>
+                  <p class="eyebrow">CENTER ALERT</p>
+                  <h3>Restart Countdown</h3>
+                </div>
+                <span class="chip danger-chip">In-game red alert</span>
+              </div>
+              <form id="restartCountdownForm" class="form compact">
+                <div class="form-grid compact-grid">
+                  <label>Seconds<input name="waittime" type="number" min="10" max="600" value="60" /></label>
+                  <label>Message<input name="message" value="Server restart in 60 seconds." required /></label>
+                </div>
+                <button class="primary" type="submit">Send countdown and restart</button>
+              </form>
+              <p class="muted">This uses Palworld's shutdown countdown message, the same center-screen alert you saw during maintenance.</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="admin-view" id="adminView-settings">
+          <div class="admin-layout">
+            <article class="glass">
+              <div class="card-head">
+                <div>
+                  <p class="eyebrow">PRESETS</p>
+                  <h3>Apply Server Mode</h3>
+                </div>
+              </div>
+              <form id="presetForm" class="form compact">
+                <select name="preset">
+                  <option value="balanced">Balanced</option>
+                  <option value="pve">PvE</option>
+                  <option value="pvp">PvP</option>
+                  <option value="boosted">Boosted</option>
+                  <option value="builder">Builder</option>
+                  <option value="breeding">Breeding</option>
+                  <option value="event-weekend">Event Weekend</option>
+                  <option value="raid">Raid</option>
+                  <option value="no-raids">No Raids</option>
+                  <option value="hardcore">Hardcore</option>
+                </select>
+                <button class="secondary" type="submit">Apply preset</button>
+              </form>
+            </article>
+            <article class="glass">
+              <div class="card-head">
+                <div>
+                  <p class="eyebrow">CURRENT WORLD</p>
+                  <h3>Live Server Details</h3>
+                </div>
+              </div>
+              <dl id="adminServerDetails"></dl>
+            </article>
+          </div>
+          <form id="settingsForm" class="admin-settings-form"></form>
+        </div>
+
+        <div class="admin-view" id="adminView-announcements">
+          <div class="admin-layout">
+            <article class="glass">
+              <div class="card-head">
+                <div>
+                  <p class="eyebrow">BROADCAST</p>
+                  <h3>Send Announcement</h3>
+                </div>
+              </div>
+              <form id="announceForm" class="form compact">
+                <textarea name="message" placeholder="Restart in 10 minutes. Join Discord for event rules." required></textarea>
+                <button class="primary" type="submit">Send broadcast</button>
+              </form>
+            </article>
+            <article class="glass">
+              <div class="card-head">
+                <div>
+                  <p class="eyebrow">TEMPLATES</p>
+                  <h3>Quick Messages</h3>
+                </div>
+              </div>
+              <div class="template-grid">
+                <button data-template="Server restart in 60 seconds. Please find a safe spot.">Restart 60s</button>
+                <button data-template="Server restart in 10 minutes. Please return to base and save progress.">Restart 10m</button>
+                <button data-template="Weekend event is live: boosted gathering, drops, and capture rates.">Event Live</button>
+                <button data-template="Join Discord for server rules, event notices, and support.">Discord Reminder</button>
+              </div>
+            </article>
+          </div>
+          <article class="glass wide">
+            <div class="card-head">
+              <div>
+                <p class="eyebrow">HISTORY</p>
+                <h3>Announcements</h3>
+              </div>
+            </div>
+            <div id="announcementList" class="timeline-list"></div>
           </article>
-          <article class="glass wide-card">
-            <h3>Admin Players</h3>
+        </div>
+
+        <div class="admin-view" id="adminView-players">
+          <article class="glass">
+            <div class="card-head">
+              <div>
+                <p class="eyebrow">CURRENT WORLD</p>
+                <h3>Online Players</h3>
+              </div>
+            </div>
             <div class="table-wrap">
               <table>
                 <thead><tr><th>Name</th><th>User ID</th><th>IP</th><th>Ping</th><th>Action</th></tr></thead>
@@ -214,15 +300,58 @@
               </table>
             </div>
           </article>
-          <article class="glass wide-card">
-            <h3>Orders</h3>
-            <div id="adminOrders" class="order-list"></div>
+        </div>
+
+        <div class="admin-view" id="adminView-shop">
+          <div class="admin-layout">
+            <article class="glass">
+              <div class="card-head">
+                <div>
+                  <p class="eyebrow">CATALOG</p>
+                  <h3>Add or Edit Shop Item</h3>
+                </div>
+              </div>
+              <form id="shopItemForm" class="form compact">
+                <input name="id" placeholder="item-id, blank for new" />
+                <input name="name" placeholder="Item name" required />
+                <div class="form-grid compact-grid">
+                  <input name="category" placeholder="Category" />
+                  <input name="currency" placeholder="Currency" value="Request" />
+                  <input name="price" type="number" step="1" value="0" />
+                  <select name="status"><option>active</option><option>draft</option><option>hidden</option></select>
+                </div>
+                <textarea name="description" placeholder="Description"></textarea>
+                <button class="primary" type="submit">Save shop item</button>
+              </form>
+            </article>
+            <article class="glass">
+              <div class="card-head">
+                <div>
+                  <p class="eyebrow">REQUESTS</p>
+                  <h3>Orders</h3>
+                </div>
+              </div>
+              <div id="adminOrders" class="order-list"></div>
+            </article>
+          </div>
+          <div id="adminShopCatalog" class="cards wide"></div>
+        </div>
+
+        <div class="admin-view" id="adminView-activity">
+          <article class="glass">
+            <div class="card-head">
+              <div>
+                <p class="eyebrow">AUDIT</p>
+                <h3>Recent Admin Activity</h3>
+              </div>
+            </div>
+            <div id="adminAudit" class="timeline-list"></div>
           </article>
         </div>
       </section>
     </main>
 
     <div class="toast" id="toast" role="status"></div>
-    <script src="/app.js?v=20260720-admin-route-2" type="module"></script>
+    <script src="/app.js?v=20260725-admin-command" type="module"></script>
   </body>
 </html>

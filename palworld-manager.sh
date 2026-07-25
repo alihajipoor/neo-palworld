@@ -1984,9 +1984,10 @@ Service Control
 2) Stop server gracefully
 3) Force stop server
 4) Restart server
-5) Status
-6) Logs
-7) Live log tail
+5) Restart with 60-second in-game warning
+6) Status
+7) Logs
+8) Live log tail
 0) Back
 
 EOF
@@ -1998,6 +1999,14 @@ EOF
       3) FORCE="true"; stop_server; FORCE="false"; pause_menu ;;
       4) restart_server; pause_menu ;;
       5)
+        SHUTDOWN_WAIT="60"
+        MESSAGE="$(prompt_text "Restart countdown message" "Server restart in 60 seconds. Please find a safe spot.")"
+        restart_server
+        SHUTDOWN_WAIT="30"
+        MESSAGE="Server maintenance"
+        pause_menu
+        ;;
+      6)
         status_server
         if ! server_service_active && prompt_yes_no "Start the Palworld server now" "y"; then
           start_server || true
@@ -2005,8 +2014,8 @@ EOF
         fi
         pause_menu
         ;;
-      6) logs; pause_menu ;;
-      7) tail_logs ;;
+      7) logs; pause_menu ;;
+      8) tail_logs ;;
       0) return ;;
       *) warn "Unknown choice."; pause_menu ;;
     esac

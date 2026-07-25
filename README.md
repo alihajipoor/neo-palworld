@@ -78,6 +78,12 @@ sudo bash palworld-manager.sh
 
 Use it for starting/stopping, updates, backups, restores, settings, REST API tools, mods, logs, and health checks.
 
+For a restart that warns players in the center of the game screen, use:
+
+```text
+Start / stop / status / logs -> Restart with 60-second in-game warning
+```
+
 ## Settings
 
 Open the menu and choose `Settings and presets`.
@@ -202,6 +208,7 @@ Included pages/features:
 - Optional Xbox/Microsoft sign-in with Microsoft OpenID Connect after you add Microsoft OAuth credentials.
 - Shop catalog and order/request ledger for future purchases or admin-reviewed perks.
 - Separate `/admin` owner login and admin dashboard for save, backup, start, stop, restart, update, announcements, presets, common settings, kick, ban, orders, and audit history.
+- Organized admin command center with monitoring tiles, section tabs, current settings editor, grouped toggles, announcement history, restart countdown alerts, shop catalog editing, player tools, and audit history.
 
 Owner/admin login:
 

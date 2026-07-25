@@ -39,6 +39,92 @@ const heroSlides = [
   }
 ];
 
+const settingGroups = [
+  {
+    title: "Identity and Access",
+    note: "Public details and access limits. Leave password fields blank unless you want to change them.",
+    fields: [
+      { key: "ServerName", label: "Server name", type: "text" },
+      { key: "ServerDescription", label: "Server description", type: "text" },
+      { key: "ServerPlayerMaxNum", label: "Max players", type: "number", step: "1" },
+      { key: "ServerPassword", label: "Join password", type: "password" },
+      { key: "AdminPassword", label: "Palworld admin password", type: "password" },
+      { key: "bShowPlayerList", label: "Show player list", type: "boolean" }
+    ]
+  },
+  {
+    title: "Gameplay Rates",
+    note: "Most rates are multipliers: 1.0 is normal, 2.0 is double, 0.5 is half.",
+    fields: [
+      { key: "ExpRate", label: "EXP rate", type: "number", step: "0.1" },
+      { key: "PalCaptureRate", label: "Capture rate", type: "number", step: "0.1" },
+      { key: "PalSpawnNumRate", label: "Pal spawn rate", type: "number", step: "0.1" },
+      { key: "CollectionDropRate", label: "Gather/drop rate", type: "number", step: "0.1" },
+      { key: "CollectionObjectHpRate", label: "Resource HP rate", type: "number", step: "0.1" },
+      { key: "CollectionObjectRespawnSpeedRate", label: "Resource respawn rate", type: "number", step: "0.1" },
+      { key: "EnemyDropItemRate", label: "Enemy item drop rate", type: "number", step: "0.1" },
+      { key: "MonsterFarmActionSpeedRate", label: "Ranch production speed", type: "number", step: "0.1" },
+      { key: "PalEggDefaultHatchingTime", label: "Egg hatch time", type: "number", step: "0.1" }
+    ]
+  },
+  {
+    title: "Travel and World Rules",
+    note: "Fast travel statues need bIsFastTravelDisabled=False. Base-only travel makes travel more hardcore.",
+    fields: [
+      { key: "bEnableFastTravel", label: "Enable fast travel", type: "boolean" },
+      { key: "bIsFastTravelDisabled", label: "Disable fast travel", type: "boolean" },
+      { key: "bEnableFastTravelOnlyBaseCamp", label: "Fast travel only from bases", type: "boolean" },
+      { key: "bIsStartLocationSelectByMap", label: "Choose start location from map", type: "boolean" },
+      { key: "bEnableInvaderEnemy", label: "Enable raids / invaders", type: "boolean" },
+      { key: "bEnableNonLoginPenalty", label: "Enable non-login penalty", type: "boolean" },
+      { key: "DeathPenalty", label: "Death penalty", type: "select", options: ["None", "Item", "ItemAndEquipment", "All"] }
+    ]
+  },
+  {
+    title: "Survival and Combat",
+    note: "Defense rates usually mean damage received. Lower player defense makes players tougher.",
+    fields: [
+      { key: "PlayerStomachDecreaceRate", label: "Player hunger drain", type: "number", step: "0.1" },
+      { key: "PalStomachDecreaceRate", label: "Pal hunger drain", type: "number", step: "0.1" },
+      { key: "PlayerStaminaDecreaceRate", label: "Player stamina drain", type: "number", step: "0.1" },
+      { key: "PalStaminaDecreaceRate", label: "Pal stamina drain", type: "number", step: "0.1" },
+      { key: "PlayerDamageRateAttack", label: "Player damage dealt", type: "number", step: "0.1" },
+      { key: "PlayerDamageRateDefense", label: "Player damage taken", type: "number", step: "0.1" },
+      { key: "PalDamageRateAttack", label: "Pal damage dealt", type: "number", step: "0.1" },
+      { key: "PalDamageRateDefense", label: "Pal damage taken", type: "number", step: "0.1" }
+    ]
+  },
+  {
+    title: "PvP and Guild Rules",
+    note: "These switches are useful for PvP seasons, raid weekends, and fair-play rules.",
+    fields: [
+      { key: "bIsPvP", label: "Enable PvP", type: "boolean" },
+      { key: "bEnablePlayerToPlayerDamage", label: "Player-to-player damage", type: "boolean" },
+      { key: "bEnableFriendlyFire", label: "Friendly fire", type: "boolean" },
+      { key: "bEnableDefenseOtherGuildPlayer", label: "Damage other guild bases/players", type: "boolean" },
+      { key: "bCanPickupOtherGuildDeathPenaltyDrop", label: "Loot other guild death drops", type: "boolean" },
+      { key: "bExistPlayerAfterLogout", label: "Keep players in world after logout", type: "boolean" },
+      { key: "bAllowEnhanceStat_Health", label: "Allow health stat enhancement", type: "boolean" },
+      { key: "bAllowEnhanceStat_Attack", label: "Allow attack stat enhancement", type: "boolean" }
+    ]
+  },
+  {
+    title: "Bases, Building, Cleanup",
+    note: "Higher building/base values are convenient but can increase server load.",
+    fields: [
+      { key: "BaseCampMaxNum", label: "Base camp max", type: "number", step: "1" },
+      { key: "BaseCampWorkerMaxNum", label: "Workers per base", type: "number", step: "1" },
+      { key: "GuildPlayerMaxNum", label: "Players per guild", type: "number", step: "1" },
+      { key: "BaseCampMaxNumInGuild", label: "Bases per guild", type: "number", step: "1" },
+      { key: "MaxBuildingLimitNum", label: "Building limit", type: "number", step: "1" },
+      { key: "BuildObjectDamageRate", label: "Building damage rate", type: "number", step: "0.1" },
+      { key: "BuildObjectDeteriorationDamageRate", label: "Building deterioration", type: "number", step: "0.1" },
+      { key: "DropItemMaxNum", label: "Dropped item max count", type: "number", step: "1" },
+      { key: "DropItemAliveMaxHours", label: "Dropped item lifetime hours", type: "number", step: "0.1" }
+    ]
+  }
+];
+
 const api = async (path, options = {}) => {
   const response = await fetch(path, {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
@@ -276,6 +362,33 @@ async function loadAdmin() {
 
 function renderAdmin() {
   const players = adminState.players || [];
+  const metrics = adminState.metrics || {};
+  const info = adminState.info || {};
+  const settings = adminSettings();
+  const serviceOutput = adminState.service?.output || "";
+  const isServiceActive = /active \(running\)|Started|running/i.test(serviceOutput) && !/inactive|failed/i.test(serviceOutput);
+  $("#adminServiceChip").textContent = isServiceActive ? "Service online" : "Check service";
+  $("#adminServiceChip").classList.toggle("danger-chip", !isServiceActive);
+  $("#adminMetrics").innerHTML = [
+    stat("Status", info.offline ? "REST Offline" : "Online", info.offline ? "bad" : "good"),
+    stat("Players", `${metrics.currentplayernum ?? 0}/${metrics.maxplayernum ?? settings.ServerPlayerMaxNum ?? "-"}`),
+    stat("FPS", metrics.serverfps ?? "-"),
+    stat("Uptime", metrics.uptime ? fmtTime(metrics.uptime) : "-"),
+    stat("World Days", metrics.days ?? "-"),
+    stat("Bases", metrics.basecampnum ?? "-")
+  ].join("");
+  $("#adminServerDetails").innerHTML = dl({
+    "Server": info.servername || settings.ServerName || "Neo Palworld",
+    "Description": info.description || settings.ServerDescription || "-",
+    "Game version": info.version || "-",
+    "World GUID": info.worldguid || "-",
+    "PvP": settings.bIsPvP ?? "-",
+    "Fast travel disabled": settings.bIsFastTravelDisabled ?? "-"
+  });
+  renderAdminSettings(settings);
+  renderAdminAnnouncements();
+  renderAdminShop();
+  renderAdminAudit();
   $("#adminPlayerRows").innerHTML = players.length
     ? players.map((p) => `<tr><td>${escapeHtml(p.name || p.accountName || "Player")}</td><td>${escapeHtml(p.userId || "-")}</td><td>${escapeHtml(p.ip || "-")}</td><td>${escapeHtml(p.ping ?? "-")}</td><td><button data-kick="${escapeAttr(p.userId)}">Kick</button> <button data-ban="${escapeAttr(p.userId)}">Ban</button></td></tr>`).join("")
     : `<tr><td colspan="5" class="muted">No players online.</td></tr>`;
@@ -290,6 +403,113 @@ function renderAdmin() {
       </div>
     </div>
   `).join("") || `<p class="muted">No shop orders yet.</p>`;
+}
+
+function adminSettings() {
+  const raw = adminState?.settings || {};
+  return raw.settings || raw.OptionSettings || raw.optionSettings || raw;
+}
+
+function renderAdminSettings(settings) {
+  const form = $("#settingsForm");
+  if (!form) return;
+  form.innerHTML = `
+    <div class="settings-toolbar">
+      <div>
+        <p class="eyebrow">WORLD CONFIG</p>
+        <h3>Current Settings Editor</h3>
+        <p class="muted">Values are filled from the server when available. Empty fields are skipped. Most changes need a restart.</p>
+      </div>
+      <button class="primary" type="submit">Save changed settings</button>
+    </div>
+    <div class="settings-groups">
+      ${settingGroups.map((group) => `
+        <fieldset class="setting-group">
+          <legend>${escapeHtml(group.title)}</legend>
+          <p class="muted">${escapeHtml(group.note)}</p>
+          <div class="settings-grid">
+            ${group.fields.map((field) => renderSettingField(field, settings[field.key])).join("")}
+          </div>
+        </fieldset>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderSettingField(field, value) {
+  const cleanValue = value === undefined || value === null ? "" : String(value).replace(/^"|"$/g, "");
+  if (field.type === "boolean") {
+    return `
+      <label class="switch-field">
+        <span>${escapeHtml(field.label)}</span>
+        <select name="${escapeAttr(field.key)}">
+          <option value="">No change</option>
+          <option value="True" ${/^true$/i.test(cleanValue) ? "selected" : ""}>On</option>
+          <option value="False" ${/^false$/i.test(cleanValue) ? "selected" : ""}>Off</option>
+        </select>
+      </label>
+    `;
+  }
+  if (field.type === "select") {
+    return `
+      <label>${escapeHtml(field.label)}
+        <select name="${escapeAttr(field.key)}">
+          <option value="">No change</option>
+          ${(field.options || []).map((option) => `<option value="${escapeAttr(option)}" ${cleanValue === option ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}
+        </select>
+      </label>
+    `;
+  }
+  return `
+    <label>${escapeHtml(field.label)}
+      <input name="${escapeAttr(field.key)}" type="${escapeAttr(field.type || "text")}" step="${escapeAttr(field.step || "any")}" value="${field.type === "password" ? "" : escapeAttr(cleanValue)}" placeholder="${field.type === "password" ? "Leave blank to keep current" : ""}" />
+    </label>
+  `;
+}
+
+function renderAdminAnnouncements() {
+  const list = $("#announcementList");
+  if (!list) return;
+  list.innerHTML = (adminState.announcements || []).length
+    ? adminState.announcements.map((item) => `
+      <div class="timeline-item">
+        <div>
+          <strong>${escapeHtml(item.type === "restart-countdown" ? "Restart countdown" : "Broadcast")}</strong>
+          <p>${escapeHtml(item.message)}</p>
+          <span class="muted">${escapeHtml(item.by || "admin")} / ${escapeHtml(new Date(item.createdAt).toLocaleString())}${item.waittime ? ` / ${escapeHtml(item.waittime)}s` : ""}</span>
+        </div>
+        <button class="ghost" data-announcement-delete="${escapeAttr(item.id)}">Remove</button>
+      </div>
+    `).join("")
+    : `<p class="muted">No announcements have been sent from this panel yet.</p>`;
+}
+
+function renderAdminShop() {
+  const catalog = $("#adminShopCatalog");
+  if (!catalog) return;
+  catalog.innerHTML = (adminState.shop || []).map((item) => `
+    <article class="card">
+      <span class="chip">${escapeHtml(item.status || "active")}</span>
+      <h3>${escapeHtml(item.name)}</h3>
+      <p class="muted">${escapeHtml(item.category || "General")} / ${escapeHtml(String(item.price ?? 0))} ${escapeHtml(item.currency || "Request")}</p>
+      <p>${escapeHtml(item.description || "")}</p>
+      <button data-shop-edit="${escapeAttr(item.id)}">Edit</button>
+    </article>
+  `).join("") || `<p class="muted">No shop items yet.</p>`;
+}
+
+function renderAdminAudit() {
+  const audit = $("#adminAudit");
+  if (!audit) return;
+  audit.innerHTML = (adminState.audit || []).map((item) => `
+    <div class="timeline-item">
+      <div>
+        <strong>${escapeHtml(item.action || "event")}</strong>
+        <p class="muted">${escapeHtml(item.detail || "")}</p>
+        <span class="muted">${escapeHtml(new Date(item.createdAt || item.at || item.time || Date.now()).toLocaleString())}</span>
+      </div>
+    </div>
+  `).join("") || `<p class="muted">No admin activity yet.</p>`;
 }
 
 function escapeHtml(value) {
@@ -346,6 +566,14 @@ document.addEventListener("click", async (event) => {
   if (target.dataset.providerLogin) {
     window.location.href = target.dataset.providerLogin;
   }
+  if (target.dataset.adminView) {
+    $$(".admin-subnav button").forEach((button) => button.classList.toggle("active", button === target));
+    $$(".admin-view").forEach((view) => view.classList.toggle("active", view.id === `adminView-${target.dataset.adminView}`));
+  }
+  if (target.dataset.template) {
+    const message = $("[name='message']", $("#announceForm"));
+    if (message) message.value = target.dataset.template;
+  }
   if (target.dataset.order) {
     await api("/api/shop/order", { method: "POST", body: JSON.stringify({ itemId: target.dataset.order }) })
       .then(() => toast("Request sent"))
@@ -358,7 +586,25 @@ document.addEventListener("click", async (event) => {
     await api("/api/admin/control", { method: "POST", body: JSON.stringify({ action: target.dataset.control }) })
       .then((data) => { $("#controlOutput").textContent = data.result?.output || "Done"; toast("Action finished"); })
       .catch((error) => { $("#controlOutput").textContent = error.message; toast(error.message); })
-      .finally(() => { target.disabled = false; });
+      .finally(async () => { target.disabled = false; await loadAdmin().catch(() => {}); });
+  }
+  if (target.dataset.announcementDelete) {
+    await api("/api/admin/announcement-delete", { method: "POST", body: JSON.stringify({ id: target.dataset.announcementDelete }) })
+      .then(() => toast("Announcement removed"))
+      .catch((error) => toast(error.message));
+    await loadAdmin().catch(() => {});
+  }
+  if (target.dataset.shopEdit) {
+    const item = (adminState?.shop || []).find((entry) => entry.id === target.dataset.shopEdit);
+    const form = $("#shopItemForm");
+    if (item && form) {
+      for (const [key, value] of Object.entries(item)) {
+        if (form.elements[key]) form.elements[key].value = value ?? "";
+      }
+      $$(".admin-subnav button").forEach((button) => button.classList.toggle("active", button.dataset.adminView === "shop"));
+      $$(".admin-view").forEach((view) => view.classList.toggle("active", view.id === "adminView-shop"));
+      toast("Shop item loaded for editing");
+    }
   }
   if (target.dataset.kick || target.dataset.ban) {
     const action = target.dataset.ban ? "ban" : "kick";
@@ -405,15 +651,26 @@ bind("#announceForm", "submit", async (event) => {
   event.preventDefault();
   const data = Object.fromEntries(new FormData(event.target));
   await api("/api/admin/announce", { method: "POST", body: JSON.stringify(data) })
-    .then(() => { toast("Announcement sent"); event.target.reset(); })
+    .then(async () => { toast("Announcement sent"); event.target.reset(); await loadAdmin(); })
     .catch((error) => toast(error.message));
+});
+
+bind("#restartCountdownForm", "submit", async (event) => {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(event.target));
+  const confirmed = confirm(`Send restart countdown and restart the server in ${data.waittime || 60} seconds?`);
+  if (!confirmed) return;
+  $("#controlOutput").textContent = "Sending countdown and restarting...";
+  await api("/api/admin/restart-countdown", { method: "POST", body: JSON.stringify(data) })
+    .then(async (result) => { $("#controlOutput").textContent = result.result?.output || "Restart countdown sent."; toast("Restart countdown sent"); await loadAdmin(); })
+    .catch((error) => { $("#controlOutput").textContent = error.message; toast(error.message); });
 });
 
 bind("#presetForm", "submit", async (event) => {
   event.preventDefault();
   const data = Object.fromEntries(new FormData(event.target));
   await api("/api/admin/preset", { method: "POST", body: JSON.stringify(data) })
-    .then(() => toast("Preset applied. Restart required."))
+    .then(async () => { toast("Preset applied. Restart required."); await loadAdmin(); })
     .catch((error) => toast(error.message));
 });
 
@@ -421,7 +678,15 @@ bind("#settingsForm", "submit", async (event) => {
   event.preventDefault();
   const settings = Object.fromEntries([...new FormData(event.target)].filter(([, value]) => value !== ""));
   await api("/api/admin/settings", { method: "POST", body: JSON.stringify({ settings }) })
-    .then(() => toast("Settings saved. Restart required."))
+    .then(async () => { toast("Settings saved. Restart required."); await loadAdmin(); })
+    .catch((error) => toast(error.message));
+});
+
+bind("#shopItemForm", "submit", async (event) => {
+  event.preventDefault();
+  const item = Object.fromEntries(new FormData(event.target));
+  await api("/api/admin/shop", { method: "POST", body: JSON.stringify(item) })
+    .then(async () => { toast("Shop item saved"); event.target.reset(); await loadAdmin(); })
     .catch((error) => toast(error.message));
 });
 

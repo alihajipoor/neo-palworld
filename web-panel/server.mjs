@@ -574,6 +574,7 @@ async function routeAdmin(req, res, url, user) {
       users: state.users.map(publicUser),
       shop: state.shop,
       orders: state.orders,
+      announcements: state.announcements.slice(0, 100),
       audit: state.audit.slice(0, 80)
     });
   }
@@ -587,15 +588,44 @@ async function routeAdmin(req, res, url, user) {
     return json(res, 200, { ok: true, result });
   }
 
+  if (req.method === "POST" && url.pathname === "/api/admin/restart-countdown") {
+    const body = await bodyJson(req);
+    const wait = Math.max(10, Math.min(600, Number(body.waittime || 60)));
+    const message = String(body.message || `Server will restart in ${wait} seconds.`).trim().slice(0, 300);
+    const result = await control("restart", ["--shutdown-wait", String(wait), "--message", message]);
+    state.announcements.unshift({
+      id: randomId(),
+      type: "restart-countdown",
+      message,
+      waittime: wait,
+      by: user.username,
+      createdAt: new Date().toISOString()
+    });
+    await saveState();
+    audit("restart-countdown", `${wait}s ${message}`);
+    return json(res, 200, { ok: true, result });
+  }
+
   if (req.method === "POST" && url.pathname === "/api/admin/announce") {
     const body = await bodyJson(req);
     const message = String(body.message || "").trim().slice(0, 300);
     if (!message) return json(res, 400, { ok: false, error: "Announcement is empty." });
     const result = await rest("POST", "announce", { message });
-    state.announcements.unshift({ id: randomId(), message, by: user.username, createdAt: new Date().toISOString() });
+    state.announcements.unshift({ id: randomId(), type: "broadcast", message, by: user.username, createdAt: new Date().toISOString() });
     await saveState();
     audit("announce", message);
     return json(res, 200, { ok: true, result });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/admin/announcement-delete") {
+    const body = await bodyJson(req);
+    const id = String(body.id || "");
+    const before = state.announcements.length;
+    state.announcements = state.announcements.filter((item) => item.id !== id);
+    if (state.announcements.length === before) return json(res, 404, { ok: false, error: "Announcement was not found." });
+    await saveState();
+    audit("announcement-delete", id);
+    return json(res, 200, { ok: true });
   }
 
   if (req.method === "POST" && url.pathname === "/api/admin/player-action") {
@@ -749,7 +779,7 @@ function control(command, args = []) {
     const useSudo = typeof process.getuid === "function" && process.getuid() !== 0;
     const bin = useSudo ? "sudo" : config.controlPath;
     const fullArgs = useSudo ? ["-n", config.controlPath, command, ...args] : [command, ...args];
-    execFile(bin, fullArgs, { timeout: 120000, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
+    execFile(bin, fullArgs, { timeout: 240000, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
       const output = `${stdout || ""}${stderr || ""}`.trim();
       if (error) {
         error.message = output || error.message;
