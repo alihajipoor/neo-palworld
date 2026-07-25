@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Neo Palworld Command</title>
+    <meta name="description" content="Connected web panel for Neo Palworld." />
+    <link rel="stylesheet" href="/styles.css?v=20260720-admin-route-2" />
+  </head>
+  <body>
+    <div class="sky"></div>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">N</span>
+        <div>
+          <strong>Neo Palworld</strong>
+          <span>Public Dedicated Server</span>
+        </div>
+      </div>
+      <nav class="tabs" aria-label="Main">
+        <button data-tab="overview" class="active">Overview</button>
+        <button data-tab="players">Players</button>
+        <button data-tab="discord">Discord</button>
+        <button data-tab="shop">Shop</button>
+        <button data-tab="account">Account</button>
+        <button data-tab="admin" data-admin-only hidden>Admin</button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">LIVE SERVER COMMAND CENTER</p>
+          <h1>Neo Palworld</h1>
+          <p class="lead">Server status, players, Discord presence, account linking, shop requests, and admin controls in one connected panel.</p>
+          <div class="connect-row">
+            <button class="primary" id="copyConnect">Copy Direct Connect</button>
+            <span id="directConnect" class="connect-pill">Loading...</span>
+          </div>
+        </div>
+        <div class="hero-slider" id="heroSlider" aria-label="Palworld photo gallery">
+          <div class="slide-stage" id="slideStage"></div>
+          <div class="slide-gradient"></div>
+          <div class="slide-caption">
+            <span id="slideKicker">PALPAGOS LIVE</span>
+            <strong id="slideTitle">Loading gallery</strong>
+          </div>
+          <div class="slide-dots" id="slideDots" aria-label="Choose photo"></div>
+        </div>
+      </section>
+
+      <section id="overview" class="panel tab-panel active">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">SERVER SIGNAL</p>
+            <h2>Live Overview</h2>
+          </div>
+          <button class="ghost" data-refresh>Refresh</button>
+        </div>
+        <div class="stat-grid" id="stats"></div>
+        <div class="split">
+          <article class="glass">
+            <h3>Server Details</h3>
+            <dl id="serverDetails"></dl>
+          </article>
+          <article class="glass">
+            <h3>Fast Actions</h3>
+            <p class="muted">Players can use this panel for direct connect info, platform login, Discord overview, and shop requests. Owner tools live separately at /admin.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="players" class="panel tab-panel">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">CURRENT WORLD</p>
+            <h2>Online Players</h2>
+          </div>
+          <button class="ghost" data-refresh>Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Account</th><th>Level</th><th>Ping</th><th>Buildings</th><th>User</th></tr></thead>
+            <tbody id="playerRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="discord" class="panel tab-panel">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">COMMUNITY</p>
+            <h2>Discord Overview</h2>
+          </div>
+          <a class="button-link" id="discordInvite" href="#" target="_blank" rel="noreferrer">Join Discord</a>
+        </div>
+        <div class="discord-grid" id="discordGrid"></div>
+      </section>
+
+      <section id="shop" class="panel tab-panel">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">FUTURE READY</p>
+            <h2>Player Shop</h2>
+          </div>
+          <span class="chip">Request ledger active</span>
+        </div>
+        <div class="cards" id="shopCards"></div>
+      </section>
+
+      <section id="account" class="panel tab-panel">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">PLAYER ACCESS</p>
+            <h2>Account</h2>
+          </div>
+          <button class="ghost" id="logoutBtn" hidden>Log out</button>
+        </div>
+        <div class="split">
+          <article class="glass form" id="providerLogin">
+            <h3>Sign in with your platform</h3>
+            <div class="provider-list" id="providerButtons"></div>
+            <p class="muted" id="providerHelp"></p>
+          </article>
+          <article class="glass" id="accountSummary" hidden>
+            <h3>Player session</h3>
+            <dl id="accountDetails"></dl>
+          </article>
+        </div>
+        <div id="myOrders" class="cards"></div>
+      </section>
+
+      <section id="adminLogin" class="panel tab-panel">
+        <div class="admin-login-shell">
+          <form class="glass form admin-login-card" id="adminLoginForm">
+            <p class="eyebrow">OWNER ACCESS</p>
+            <h2>Admin Login</h2>
+            <p class="muted">Use the owner username and password from the web panel install. This page is intentionally separate from the public Account area.</p>
+            <label>Username<input name="username" autocomplete="username" required /></label>
+            <label>Password<input name="password" type="password" autocomplete="current-password" required /></label>
+            <button class="primary" type="submit">Open admin panel</button>
+          </form>
+        </div>
+      </section>
+
+      <section id="admin" class="panel tab-panel">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">ADMIN BRIDGE</p>
+            <h2>Server Control</h2>
+          </div>
+          <button class="ghost" id="adminRefresh">Refresh admin data</button>
+        </div>
+        <div class="admin-grid">
+          <article class="glass">
+            <h3>Power</h3>
+            <div class="button-row">
+              <button data-control="save">Save</button>
+              <button data-control="backup">Backup</button>
+              <button data-control="restart">Restart</button>
+              <button data-control="stop">Stop</button>
+              <button data-control="start">Start</button>
+              <button data-control="update">Update</button>
+            </div>
+            <pre id="controlOutput"></pre>
+          </article>
+          <article class="glass">
+            <h3>Announcement</h3>
+            <form id="announceForm" class="form compact">
+              <textarea name="message" placeholder="Restart in 10 minutes. Join Discord for event rules." required></textarea>
+              <button class="primary" type="submit">Send announcement</button>
+            </form>
+          </article>
+          <article class="glass">
+            <h3>Presets</h3>
+            <form id="presetForm" class="form compact">
+              <select name="preset">
+                <option value="balanced">Balanced</option>
+                <option value="pve">PvE</option>
+                <option value="pvp">PvP</option>
+                <option value="boosted">Boosted</option>
+                <option value="builder">Builder</option>
+                <option value="breeding">Breeding</option>
+                <option value="event-weekend">Event Weekend</option>
+                <option value="raid">Raid</option>
+                <option value="no-raids">No Raids</option>
+                <option value="hardcore">Hardcore</option>
+              </select>
+              <button class="secondary" type="submit">Apply preset</button>
+            </form>
+          </article>
+          <article class="glass">
+            <h3>Common Settings</h3>
+            <form id="settingsForm" class="form compact">
+              <div class="form-grid">
+                <label>ServerName<input name="ServerName" /></label>
+                <label>ServerDescription<input name="ServerDescription" /></label>
+                <label>ExpRate<input name="ExpRate" type="number" step="0.1" /></label>
+                <label>PalCaptureRate<input name="PalCaptureRate" type="number" step="0.1" /></label>
+                <label>EnemyDropItemRate<input name="EnemyDropItemRate" type="number" step="0.1" /></label>
+                <label>PalEggDefaultHatchingTime<input name="PalEggDefaultHatchingTime" type="number" step="0.1" /></label>
+                <label>bIsPvP<select name="bIsPvP"><option value="">No change</option><option>True</option><option>False</option></select></label>
+                <label>bEnableInvaderEnemy<select name="bEnableInvaderEnemy"><option value="">No change</option><option>True</option><option>False</option></select></label>
+              </div>
+              <button class="primary" type="submit">Save settings</button>
+            </form>
+          </article>
+          <article class="glass wide-card">
+            <h3>Admin Players</h3>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Name</th><th>User ID</th><th>IP</th><th>Ping</th><th>Action</th></tr></thead>
+                <tbody id="adminPlayerRows"></tbody>
+              </table>
+            </div>
+          </article>
+          <article class="glass wide-card">
+            <h3>Orders</h3>
+            <div id="adminOrders" class="order-list"></div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status"></div>
+    <script src="/app.js?v=20260720-admin-route-2" type="module"></script>
+  </body>
+</html>

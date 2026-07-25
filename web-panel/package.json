@@ -1,0 +1,14 @@
+{
+  "name": "neo-palworld-web-panel",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Connected web panel for Neo Palworld dedicated servers.",
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node --check server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
