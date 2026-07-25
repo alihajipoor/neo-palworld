@@ -1255,6 +1255,31 @@ menu_guided_world_base_rules() {
   value="$(prompt_text "Building deterioration damage rate" "0.5")"; pairs+=("BuildObjectDeteriorationDamageRate=$value")
   value="$(prompt_text "Dropped item max count" "3000")"; pairs+=("DropItemMaxNum=$value")
   value="$(prompt_text "Dropped item lifetime hours" "2.0")"; pairs+=("DropItemAliveMaxHours=$value")
+  if prompt_yes_no "Enable fast travel statues" "y"; then
+    pairs+=("bEnableFastTravel=True" "bIsFastTravelDisabled=False")
+  else
+    pairs+=("bEnableFastTravel=False" "bIsFastTravelDisabled=True")
+  fi
+  if prompt_yes_no "Allow fast travel only from base camps" "n"; then
+    pairs+=("bEnableFastTravelOnlyBaseCamp=True")
+  else
+    pairs+=("bEnableFastTravelOnlyBaseCamp=False")
+  fi
+  if prompt_yes_no "Allow choosing start location from map" "y"; then
+    pairs+=("bIsStartLocationSelectByMap=True")
+  else
+    pairs+=("bIsStartLocationSelectByMap=False")
+  fi
+  if prompt_yes_no "Enable base raids / invader enemies" "y"; then
+    pairs+=("bEnableInvaderEnemy=True")
+  else
+    pairs+=("bEnableInvaderEnemy=False")
+  fi
+  if prompt_yes_no "Enable non-login penalty" "y"; then
+    pairs+=("bEnableNonLoginPenalty=True")
+  else
+    pairs+=("bEnableNonLoginPenalty=False")
+  fi
   set_settings_assoc "${pairs[@]}"
   warn "Restart the server for settings to take effect."
 }

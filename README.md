@@ -88,7 +88,7 @@ The menu can:
 - Edit common settings like server name, description, passwords, max players, EXP rate, capture rate, drop rate, and hatch time.
 - Set custom `Key=Value` pairs.
 - Apply presets.
-- Use guided advanced settings for gameplay rates, survival/combat, bases/guilds, PvP switches, and server identity.
+- Use guided advanced settings for gameplay rates, survival/combat, bases/guilds/world travel, PvP switches, and server identity.
 
 Available presets:
 
@@ -124,6 +124,21 @@ Other useful presets:
 - `event-weekend`: short-term high XP/drop/capture event mode.
 - `raid`: enables invader/raid-style pressure.
 - `no-raids`: disables raids/non-login penalty and reduces base deterioration.
+
+If fast travel statues show `Disabled due to World Settings`, open:
+
+```text
+Settings and presets -> Guided advanced settings -> Bases/guilds/world cleanup
+```
+
+Then enable fast travel statues. The script writes both compatible fast-travel keys:
+
+```ini
+bEnableFastTravel=True
+bIsFastTravelDisabled=False
+```
+
+Restart Palworld after saving.
 
 ## Backups
 
