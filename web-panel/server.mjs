@@ -581,7 +581,7 @@ async function routeAdmin(req, res, url, user) {
 
   if (req.method === "POST" && url.pathname === "/api/admin/control") {
     const body = await bodyJson(req);
-    const allowed = new Set(["start", "stop", "restart", "update", "backup", "save", "doctor"]);
+    const allowed = new Set(["start", "stop", "restart", "update", "backup", "save", "doctor", "worldoption-status", "worldoption-disable"]);
     if (!allowed.has(body.action)) return json(res, 400, { ok: false, error: "Unknown control action." });
     const result = body.action === "save" ? await rest("POST", "save") : await control(body.action);
     audit(`control:${body.action}`, user.username);

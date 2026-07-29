@@ -155,6 +155,20 @@ bAllowGlobalPalboxExport=True
 
 `Import` lets players bring Global Palbox Pals into your server. `Export` lets them save Pals from your server to the Global Palbox. Restart Palworld after saving.
 
+If Global Palbox still says the world settings forbid reconstruction after a restart, check for a `WorldOption.sav` override:
+
+```text
+Settings and presets -> Check WorldOption.sav setting overrides
+```
+
+If an override is found, use:
+
+```text
+Settings and presets -> Disable WorldOption.sav overrides
+```
+
+That action creates a backup, stops Palworld, renames the active `WorldOption.sav` file instead of deleting it, and starts Palworld again. This makes `PalWorldSettings.ini` the source of truth for settings like Global Palbox import/export.
+
 ## Backups
 
 Open the menu and choose `Backups and restore`.

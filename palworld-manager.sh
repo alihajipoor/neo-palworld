@@ -845,6 +845,70 @@ print("\n".join(parts))
 PY
 }
 
+worldoption_root() { printf '%s/Pal/Saved/SaveGames' "$(server_dir)"; }
+
+find_worldoption_saves() {
+  local root
+  root="$(worldoption_root)"
+  [[ -d "$root" ]] || return 0
+  find "$root" -type f -name 'WorldOption.sav' -print 2>/dev/null | sort
+}
+
+worldoption_status() {
+  load_state
+  echo "PalWorldSettings.ini:"
+  echo "  $(settings_file)"
+  echo
+  echo "Global Palbox settings currently written to ini:"
+  echo "  bAllowGlobalPalboxImport=$(get_setting bAllowGlobalPalboxImport || printf 'missing')"
+  echo "  bAllowGlobalPalboxExport=$(get_setting bAllowGlobalPalboxExport || printf 'missing')"
+  echo
+  echo "WorldOption.sav override check:"
+  local found="false"
+  while IFS= read -r file; do
+    [[ -n "$file" ]] || continue
+    found="true"
+    warn "Found override file: $file"
+  done < <(find_worldoption_saves)
+  if [[ "$found" == "true" ]]; then
+    warn "WorldOption.sav can override gameplay/world settings from PalWorldSettings.ini."
+    warn "This commonly blocks Global Palbox import/export changes on existing or migrated worlds."
+    warn "Use Settings -> Disable WorldOption.sav overrides to make PalWorldSettings.ini win."
+  else
+    ok "No WorldOption.sav override files found."
+  fi
+}
+
+disable_worldoption_overrides() {
+  require_root
+  load_state
+  local -a files=()
+  while IFS= read -r file; do
+    [[ -n "$file" ]] && files+=("$file")
+  done < <(find_worldoption_saves)
+  if [[ ${#files[@]} -eq 0 ]]; then
+    ok "No WorldOption.sav override files found."
+    return 0
+  fi
+  warn "This will rename WorldOption.sav files so PalWorldSettings.ini controls world settings."
+  warn "Existing world/build/player saves are kept. The renamed override files can be restored manually if needed."
+  if [[ "$FORCE" != "true" && -t 0 ]]; then
+    prompt_yes_no "Back up saves, stop Palworld, disable WorldOption.sav overrides, and start again" "y" || return 0
+  fi
+  backup "pre-worldoption-disable-$(date +%Y%m%d-%H%M%S)" || warn "Backup failed; continuing with override rename."
+  stop_server || warn "Stop did not finish cleanly; continuing with override rename."
+  local stamp target
+  stamp="$(date +%Y%m%d-%H%M%S)"
+  for file in "${files[@]}"; do
+    [[ -f "$file" ]] || continue
+    target="${file}.disabled-${stamp}"
+    mv "$file" "$target"
+    ok "Renamed $(basename "$file") -> $(basename "$target")"
+  done
+  start_server || warn "Start failed; check service logs."
+  warn "Restart complete. Recheck Global Palbox from a freshly reconnected client."
+}
+
 apply_install_settings() {
   ensure_settings
   if [[ -z "$ADMIN_PASSWORD" ]]; then
@@ -2128,6 +2192,8 @@ Settings
 3) Set custom Key=Value pairs
 4) Apply preset
 5) Guided advanced settings
+6) Check WorldOption.sav setting overrides
+7) Disable WorldOption.sav overrides
 0) Back
 
 EOF
@@ -2183,6 +2249,14 @@ EOF
         ;;
       5)
         menu_guided_settings
+        ;;
+      6)
+        worldoption_status
+        pause_menu
+        ;;
+      7)
+        disable_worldoption_overrides
+        pause_menu
         ;;
       0) return ;;
       *) warn "Unknown choice."; pause_menu ;;
@@ -2497,6 +2571,8 @@ case "$ACTION" in
   list-backups) load_state; list_backups ;;
   restore) load_state; restore_backup ;;
   settings) load_state; show_settings ;;
+  worldoption-status) load_state; worldoption_status ;;
+  worldoption-disable) load_state; disable_worldoption_overrides ;;
   set) load_state; [[ ${#POSITIONAL[@]} -gt 0 ]] || fail "Use: set Key=Value ..."; set_settings_assoc "${POSITIONAL[@]}" ;;
   preset) load_state; apply_preset ;;
   firewall) load_state; configure_firewall ;;
