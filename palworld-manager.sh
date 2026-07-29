@@ -1691,7 +1691,9 @@ EnvironmentFile=$(web_panel_dir)/.env
 ExecStart=/usr/bin/node $(web_panel_dir)/server.mjs
 Restart=on-failure
 RestartSec=5
-NoNewPrivileges=true
+# The panel uses a narrow sudoers rule for palctl so owner actions can call
+# systemd and the manager script. Enabling NoNewPrivileges blocks sudo.
+NoNewPrivileges=false
 PrivateTmp=true
 
 [Install]
