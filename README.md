@@ -146,6 +146,15 @@ bIsFastTravelDisabled=False
 
 Restart Palworld after saving.
 
+To let friends bring Pals through the Global Palbox, open the same guided world menu and allow both Global Palbox options:
+
+```ini
+bAllowGlobalPalboxImport=True
+bAllowGlobalPalboxExport=True
+```
+
+`Import` lets players bring Global Palbox Pals into your server. `Export` lets them save Pals from your server to the Global Palbox. Restart Palworld after saving.
+
 ## Backups
 
 Open the menu and choose `Backups and restore`.

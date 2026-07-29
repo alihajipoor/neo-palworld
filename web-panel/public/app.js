@@ -69,12 +69,14 @@ const settingGroups = [
   },
   {
     title: "Travel and World Rules",
-    note: "Fast travel statues need bIsFastTravelDisabled=False. Base-only travel makes travel more hardcore.",
+    note: "Fast travel statues need bIsFastTravelDisabled=False. Global Palbox import lets players bring saved Pals into this server.",
     fields: [
       { key: "bEnableFastTravel", label: "Enable fast travel", type: "boolean" },
       { key: "bIsFastTravelDisabled", label: "Disable fast travel", type: "boolean" },
       { key: "bEnableFastTravelOnlyBaseCamp", label: "Fast travel only from bases", type: "boolean" },
       { key: "bIsStartLocationSelectByMap", label: "Choose start location from map", type: "boolean" },
+      { key: "bAllowGlobalPalboxImport", label: "Allow Global Palbox import", type: "boolean" },
+      { key: "bAllowGlobalPalboxExport", label: "Allow Global Palbox export", type: "boolean" },
       { key: "bEnableInvaderEnemy", label: "Enable raids / invaders", type: "boolean" },
       { key: "bEnableNonLoginPenalty", label: "Enable non-login penalty", type: "boolean" },
       { key: "DeathPenalty", label: "Death penalty", type: "select", options: ["None", "Item", "ItemAndEquipment", "All"] }

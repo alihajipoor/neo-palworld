@@ -1270,6 +1270,16 @@ menu_guided_world_base_rules() {
   else
     pairs+=("bIsStartLocationSelectByMap=False")
   fi
+  if prompt_yes_no "Allow Global Palbox import, so players can bring saved Pals into this server" "y"; then
+    pairs+=("bAllowGlobalPalboxImport=True")
+  else
+    pairs+=("bAllowGlobalPalboxImport=False")
+  fi
+  if prompt_yes_no "Allow Global Palbox export, so players can save Pals out of this server" "y"; then
+    pairs+=("bAllowGlobalPalboxExport=True")
+  else
+    pairs+=("bAllowGlobalPalboxExport=False")
+  fi
   if prompt_yes_no "Enable base raids / invader enemies" "y"; then
     pairs+=("bEnableInvaderEnemy=True")
   else
