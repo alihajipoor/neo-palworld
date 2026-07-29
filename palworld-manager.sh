@@ -909,6 +909,47 @@ disable_worldoption_overrides() {
   warn "Restart complete. Recheck Global Palbox from a freshly reconnected client."
 }
 
+enable_global_palbox_safely() {
+  require_root
+  load_state
+  local was_active="false"
+  server_service_active && was_active="true"
+  warn "This will enable Global Palbox import/export in PalWorldSettings.ini."
+  warn "If WorldOption.sav overrides exist, they will be renamed so the ini settings can apply."
+  if [[ "$FORCE" != "true" && -t 0 ]]; then
+    prompt_yes_no "Back up saves, stop Palworld if needed, enable Global Palbox, and start again" "y" || return 0
+  fi
+  backup "pre-global-palbox-enable-$(date +%Y%m%d-%H%M%S)" || warn "Backup failed; continuing with Global Palbox update."
+  if [[ "$was_active" == "true" ]]; then
+    local old_message="$MESSAGE"
+    MESSAGE="Applying Global Palbox settings"
+    stop_server || warn "Stop did not finish cleanly; continuing with settings update."
+    MESSAGE="$old_message"
+  fi
+  set_settings_assoc "bAllowGlobalPalboxImport=True" "bAllowGlobalPalboxExport=True"
+  local -a files=()
+  while IFS= read -r file; do
+    [[ -n "$file" ]] && files+=("$file")
+  done < <(find_worldoption_saves)
+  if [[ ${#files[@]} -gt 0 ]]; then
+    local stamp target
+    stamp="$(date +%Y%m%d-%H%M%S)"
+    for file in "${files[@]}"; do
+      [[ -f "$file" ]] || continue
+      target="${file}.disabled-${stamp}"
+      mv "$file" "$target"
+      ok "Renamed $(basename "$file") -> $(basename "$target")"
+    done
+  fi
+  if [[ "$was_active" == "true" ]]; then
+    start_server || warn "Start failed; check service logs."
+  else
+    warn "Palworld was not running. Start it when you are ready."
+  fi
+  worldoption_status
+  warn "Reconnect to Palworld before testing Global Palbox."
+}
+
 apply_install_settings() {
   ensure_settings
   if [[ -z "$ADMIN_PASSWORD" ]]; then
@@ -2194,6 +2235,7 @@ Settings
 5) Guided advanced settings
 6) Check WorldOption.sav setting overrides
 7) Disable WorldOption.sav overrides
+8) Enable Global Palbox safely
 0) Back
 
 EOF
@@ -2256,6 +2298,10 @@ EOF
         ;;
       7)
         disable_worldoption_overrides
+        pause_menu
+        ;;
+      8)
+        enable_global_palbox_safely
         pause_menu
         ;;
       0) return ;;
@@ -2573,6 +2619,7 @@ case "$ACTION" in
   settings) load_state; show_settings ;;
   worldoption-status) load_state; worldoption_status ;;
   worldoption-disable) load_state; disable_worldoption_overrides ;;
+  global-palbox-enable) load_state; enable_global_palbox_safely ;;
   set) load_state; [[ ${#POSITIONAL[@]} -gt 0 ]] || fail "Use: set Key=Value ..."; set_settings_assoc "${POSITIONAL[@]}" ;;
   preset) load_state; apply_preset ;;
   firewall) load_state; configure_firewall ;;

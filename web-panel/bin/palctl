@@ -8,7 +8,7 @@ cmd="${1:-}"
 shift || true
 
 case "$cmd" in
-  start|stop|restart|update|backup|status|settings|players|metrics|info|save|doctor|worldoption-status|worldoption-disable)
+  start|stop|restart|update|backup|status|settings|players|metrics|info|save|doctor|worldoption-status|worldoption-disable|global-palbox-enable)
     exec bash "$MANAGER" "$cmd" "$@"
     ;;
   preset)
@@ -28,7 +28,7 @@ case "$cmd" in
     exec bash "$MANAGER" logs
     ;;
   *)
-    echo "Allowed commands: start stop restart update backup status settings players metrics info save doctor worldoption-status worldoption-disable preset set announce logs" >&2
+    echo "Allowed commands: start stop restart update backup status settings players metrics info save doctor worldoption-status worldoption-disable global-palbox-enable preset set announce logs" >&2
     exit 2
     ;;
 esac
