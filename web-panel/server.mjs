@@ -557,13 +557,15 @@ async function routeApi(req, res) {
 
 async function routeAdmin(req, res, url, user) {
   if (req.method === "GET" && url.pathname === "/api/admin/state") {
-    const [info, metrics, players, settings, service] = await Promise.all([
+    const [info, metrics, players, restSettings, fileSettings, service] = await Promise.all([
       rest("GET", "info").catch(toOffline),
       rest("GET", "metrics").catch(toOffline),
       rest("GET", "players").catch(() => ({ players: [] })),
       rest("GET", "settings").catch(() => ({})),
+      managerSettings().catch(() => ({})),
       control("status").catch((error) => ({ ok: false, output: error.message }))
     ]);
+    const settings = { ...normalizeSettingsPayload(restSettings), ...fileSettings };
     return json(res, 200, {
       ok: true,
       info,
@@ -581,7 +583,7 @@ async function routeAdmin(req, res, url, user) {
 
   if (req.method === "POST" && url.pathname === "/api/admin/control") {
     const body = await bodyJson(req);
-    const allowed = new Set(["start", "stop", "restart", "update", "backup", "save", "doctor", "settings-diagnostics", "settings-repair", "worldoption-status", "worldoption-disable", "global-palbox-enable", "fast-travel-enable"]);
+    const allowed = new Set(["start", "stop", "restart", "update", "backup", "save", "doctor", "settings-diagnostics", "settings-repair", "worldoption-status", "worldoption-disable", "global-palbox-enable", "fast-travel-enable", "stat-enhancements-enable"]);
     if (!allowed.has(body.action)) return json(res, 400, { ok: false, error: "Unknown control action." });
     const result = body.action === "save" ? await rest("POST", "save") : await control(body.action);
     audit(`control:${body.action}`, user.username);
@@ -645,8 +647,9 @@ async function routeAdmin(req, res, url, user) {
       .map(([key, value]) => `${key}=${String(value).replace(/\r?\n/g, " ").slice(0, 300)}`);
     if (!pairs.length) return json(res, 400, { ok: false, error: "No valid settings were provided." });
     const result = await control("set", pairs);
+    const settings = await managerSettings().catch(() => ({}));
     audit("settings", pairs.join(", "));
-    return json(res, 200, { ok: true, applied: true, result });
+    return json(res, 200, { ok: true, applied: true, result, settings });
   }
 
   if (req.method === "POST" && url.pathname === "/api/admin/preset") {
@@ -789,6 +792,30 @@ function control(command, args = []) {
       resolve({ ok: true, output });
     });
   });
+}
+
+async function managerSettings() {
+  const result = await control("settings");
+  return parseSettingsOutput(result.output || "");
+}
+
+function normalizeSettingsPayload(payload) {
+  const raw = payload?.settings || payload?.OptionSettings || payload?.optionSettings || payload || {};
+  return raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+}
+
+function parseSettingsOutput(output) {
+  const settings = {};
+  for (const line of String(output || "").split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("[") || trimmed.startsWith("WARN") || trimmed.startsWith("OK")) continue;
+    const index = trimmed.indexOf("=");
+    if (index <= 0) continue;
+    const key = trimmed.slice(0, index).trim();
+    const value = trimmed.slice(index + 1).trim();
+    if (/^[A-Za-z0-9_]+$/.test(key)) settings[key] = value;
+  }
+  return settings;
 }
 
 async function bodyJson(req) {

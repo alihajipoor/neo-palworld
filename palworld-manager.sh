@@ -1002,6 +1002,11 @@ important = [
     "bEnableFastTravelOnlyBaseCamp",
     "bAllowGlobalPalboxImport",
     "bAllowGlobalPalboxExport",
+    "bAllowEnhanceStat_Health",
+    "bAllowEnhanceStat_Attack",
+    "bAllowEnhanceStat_Stamina",
+    "bAllowEnhanceStat_Weight",
+    "bAllowEnhanceStat_WorkSpeed",
     "Difficulty",
 ]
 for key in important:
@@ -1084,6 +1089,11 @@ settings_diagnostics() {
     echo "  bEnableFastTravelOnlyBaseCamp=$(get_setting bEnableFastTravelOnlyBaseCamp || printf 'missing')"
     echo "  bAllowGlobalPalboxImport=$(get_setting bAllowGlobalPalboxImport || printf 'missing')"
     echo "  bAllowGlobalPalboxExport=$(get_setting bAllowGlobalPalboxExport || printf 'missing')"
+    echo "  bAllowEnhanceStat_Health=$(get_setting bAllowEnhanceStat_Health || printf 'missing')"
+    echo "  bAllowEnhanceStat_Attack=$(get_setting bAllowEnhanceStat_Attack || printf 'missing')"
+    echo "  bAllowEnhanceStat_Stamina=$(get_setting bAllowEnhanceStat_Stamina || printf 'missing')"
+    echo "  bAllowEnhanceStat_Weight=$(get_setting bAllowEnhanceStat_Weight || printf 'missing')"
+    echo "  bAllowEnhanceStat_WorkSpeed=$(get_setting bAllowEnhanceStat_WorkSpeed || printf 'missing')"
     echo "  Difficulty=$(get_setting Difficulty || printf 'missing')"
   else
     warn "Expected config file is missing."
@@ -1244,6 +1254,42 @@ enable_fast_travel_safely() {
   echo "  bIsFastTravelDisabled=$(get_setting bIsFastTravelDisabled || printf 'missing')"
   echo "  bEnableFastTravelOnlyBaseCamp=$(get_setting bEnableFastTravelOnlyBaseCamp || printf 'missing')"
   warn "Reconnect to Palworld before testing fast travel."
+}
+
+enable_stat_enhancements_safely() {
+  require_root
+  load_state
+  local was_active="false"
+  server_service_active && was_active="true"
+  warn "This will allow players to enhance Health, Attack, Stamina, Weight, and Work Speed."
+  if [[ "$FORCE" != "true" && -t 0 ]]; then
+    prompt_yes_no "Back up saves, stop Palworld if needed, enable all stat enhancements, and start again" "y" || return 0
+  fi
+  backup "pre-stat-enhancements-enable-$(date +%Y%m%d-%H%M%S)" || warn "Backup failed; continuing with stat enhancement update."
+  if [[ "$was_active" == "true" ]]; then
+    local old_message="$MESSAGE"
+    MESSAGE="Applying stat enhancement settings"
+    stop_server || warn "Stop did not finish cleanly; continuing with settings update."
+    MESSAGE="$old_message"
+  fi
+  set_settings_assoc \
+    "bAllowEnhanceStat_Health=True" \
+    "bAllowEnhanceStat_Attack=True" \
+    "bAllowEnhanceStat_Stamina=True" \
+    "bAllowEnhanceStat_Weight=True" \
+    "bAllowEnhanceStat_WorkSpeed=True"
+  if [[ "$was_active" == "true" ]]; then
+    start_server || warn "Start failed; check service logs."
+  else
+    warn "Palworld was not running. Start it when you are ready."
+  fi
+  echo "Stat enhancement settings currently written to ini:"
+  echo "  bAllowEnhanceStat_Health=$(get_setting bAllowEnhanceStat_Health || printf 'missing')"
+  echo "  bAllowEnhanceStat_Attack=$(get_setting bAllowEnhanceStat_Attack || printf 'missing')"
+  echo "  bAllowEnhanceStat_Stamina=$(get_setting bAllowEnhanceStat_Stamina || printf 'missing')"
+  echo "  bAllowEnhanceStat_Weight=$(get_setting bAllowEnhanceStat_Weight || printf 'missing')"
+  echo "  bAllowEnhanceStat_WorkSpeed=$(get_setting bAllowEnhanceStat_WorkSpeed || printf 'missing')"
+  warn "Reconnect before testing. Palworld only reads these settings at server startup."
 }
 
 apply_install_settings() {
@@ -2535,6 +2581,7 @@ Settings
 9) Enable fast travel safely
 10) Settings diagnostics
 11) Repair PalWorldSettings.ini format
+12) Enable all stat enhancements safely
 0) Back
 
 EOF
@@ -2613,6 +2660,10 @@ EOF
         ;;
       11)
         repair_settings_file_format
+        pause_menu
+        ;;
+      12)
+        enable_stat_enhancements_safely
         pause_menu
         ;;
       0) return ;;
@@ -2934,6 +2985,7 @@ case "$ACTION" in
   worldoption-disable) load_state; disable_worldoption_overrides ;;
   global-palbox-enable) load_state; enable_global_palbox_safely ;;
   fast-travel-enable) load_state; enable_fast_travel_safely ;;
+  stat-enhancements-enable) load_state; enable_stat_enhancements_safely ;;
   set) load_state; [[ ${#POSITIONAL[@]} -gt 0 ]] || fail "Use: set Key=Value ..."; set_settings_assoc "${POSITIONAL[@]}" ;;
   preset) load_state; apply_preset ;;
   firewall) load_state; configure_firewall ;;

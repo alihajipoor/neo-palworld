@@ -196,6 +196,24 @@ Settings and presets -> Disable WorldOption/WorldOptions.sav overrides
 
 That action creates a backup, stops Palworld, renames the active override file instead of deleting it, and starts Palworld again. This makes `PalWorldSettings.ini` the source of truth for settings like Global Palbox import/export and fast travel.
 
+Player stat enhancement toggles are controlled by:
+
+```ini
+bAllowEnhanceStat_Health=True
+bAllowEnhanceStat_Attack=True
+bAllowEnhanceStat_Stamina=True
+bAllowEnhanceStat_Weight=True
+bAllowEnhanceStat_WorkSpeed=True
+```
+
+If a PvP preset or manual edit disabled HP/Attack stat allocation, turn all enhancement stats back on from:
+
+```text
+Settings and presets -> Enable all stat enhancements safely
+```
+
+The web admin panel has the same action under Admin Operations. The settings editor reads the manager's `PalWorldSettings.ini` values as the source of truth, so it reflects what the script actually wrote instead of relying only on the live Palworld REST response.
+
 ## Backups
 
 Open the menu and choose `Backups and restore`.

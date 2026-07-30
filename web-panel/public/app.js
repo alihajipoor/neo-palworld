@@ -107,7 +107,10 @@ const settingGroups = [
       { key: "bCanPickupOtherGuildDeathPenaltyDrop", label: "Loot other guild death drops", type: "boolean" },
       { key: "bExistPlayerAfterLogout", label: "Keep players in world after logout", type: "boolean" },
       { key: "bAllowEnhanceStat_Health", label: "Allow health stat enhancement", type: "boolean" },
-      { key: "bAllowEnhanceStat_Attack", label: "Allow attack stat enhancement", type: "boolean" }
+      { key: "bAllowEnhanceStat_Attack", label: "Allow attack stat enhancement", type: "boolean" },
+      { key: "bAllowEnhanceStat_Stamina", label: "Allow stamina stat enhancement", type: "boolean" },
+      { key: "bAllowEnhanceStat_Weight", label: "Allow weight stat enhancement", type: "boolean" },
+      { key: "bAllowEnhanceStat_WorkSpeed", label: "Allow work speed stat enhancement", type: "boolean" }
     ]
   },
   {
