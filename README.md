@@ -104,7 +104,7 @@ If settings still appear to revert, run:
 Settings and presets -> Settings diagnostics
 ```
 
-That report shows the exact manager path, active systemd `ExecStart`, expected config file, current important setting values, duplicate `PalWorldSettings.ini` files, and `WorldOption.sav` status.
+That report shows the exact manager path, active systemd `ExecStart`, expected config file, current important setting values, duplicate `PalWorldSettings.ini` files, INI format/duplicate-key health, and `WorldOption.sav`/`WorldOptions.sav` status.
 
 Available presets:
 
@@ -147,7 +147,7 @@ If fast travel statues show `Disabled due to World Settings`, open:
 Settings and presets -> Enable fast travel safely
 ```
 
-That creates a backup, stops Palworld if it is running, writes the fast-travel keys while the game is not holding the config in memory, disables any `WorldOption.sav` override if present, and starts Palworld again. The script writes:
+That creates a backup, stops Palworld if it is running, writes the fast-travel keys while the game is not holding the config in memory, disables any `WorldOption.sav` or `WorldOptions.sav` override if present, and starts Palworld again. The script writes:
 
 ```ini
 bEnableFastTravel=True
@@ -172,21 +172,21 @@ The safest menu path is:
 Settings and presets -> Enable Global Palbox safely
 ```
 
-That creates a backup, stops Palworld if it is running, writes both Global Palbox keys while the game is not holding the config in memory, disables any `WorldOption.sav` override if present, and starts Palworld again.
+That creates a backup, stops Palworld if it is running, writes both Global Palbox keys while the game is not holding the config in memory, disables any `WorldOption.sav` or `WorldOptions.sav` override if present, and starts Palworld again.
 
-If Global Palbox still says the world settings forbid reconstruction after a restart, check for a `WorldOption.sav` override:
+If Global Palbox or fast travel still says the world settings forbid the action after a restart, check for a `WorldOption.sav`/`WorldOptions.sav` override:
 
 ```text
-Settings and presets -> Check WorldOption.sav setting overrides
+Settings and presets -> Check WorldOption/WorldOptions.sav setting overrides
 ```
 
 If an override is found, use:
 
 ```text
-Settings and presets -> Disable WorldOption.sav overrides
+Settings and presets -> Disable WorldOption/WorldOptions.sav overrides
 ```
 
-That action creates a backup, stops Palworld, renames the active `WorldOption.sav` file instead of deleting it, and starts Palworld again. This makes `PalWorldSettings.ini` the source of truth for settings like Global Palbox import/export.
+That action creates a backup, stops Palworld, renames the active override file instead of deleting it, and starts Palworld again. This makes `PalWorldSettings.ini` the source of truth for settings like Global Palbox import/export and fast travel.
 
 ## Backups
 

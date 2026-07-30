@@ -894,13 +894,128 @@ print("\n".join(parts))
 PY
 }
 
+settings_format_diagnostics() {
+  local cfg
+  cfg="$(settings_file)"
+  [[ -f "$cfg" ]] || { warn "Settings file is missing."; return 0; }
+  python3 - "$cfg" <<'PY'
+import re
+import sys
+from collections import Counter, defaultdict
+
+path = sys.argv[1]
+text = open(path, encoding="utf-8-sig").read()
+lines = text.splitlines()
+print(f"  line_count={len(lines)}")
+if not lines or lines[0].strip() != "[/Script/Pal.PalGameWorldSettings]":
+    print("  WARN: expected first line [/Script/Pal.PalGameWorldSettings]")
+else:
+    print("  header=ok")
+
+m = re.search(r"OptionSettings=\((.*)\)", text, re.S)
+if not m:
+    print("  WARN: OptionSettings=(...) not found")
+    raise SystemExit(0)
+
+body = m.group(1)
+if "\n" in body or "\r" in body:
+    print("  WARN: OptionSettings contains real line breaks; Palworld expects the settings tuple on one line")
+else:
+    print("  option_settings_line=ok")
+
+if len(lines) != 2:
+    print("  WARN: PalWorldSettings.ini is normally exactly 2 lines; extra lines can make troubleshooting confusing")
+
+def split_top_level(s, sep=","):
+    out, cur, depth, quote, esc = [], [], 0, False, False
+    for ch in s:
+        if esc:
+            cur.append(ch); esc = False; continue
+        if ch == "\\":
+            cur.append(ch); esc = True; continue
+        if ch == '"':
+            quote = not quote; cur.append(ch); continue
+        if not quote:
+            if ch == "(":
+                depth += 1
+            elif ch == ")" and depth:
+                depth -= 1
+            elif ch == sep and depth == 0:
+                out.append("".join(cur).strip()); cur = []; continue
+        cur.append(ch)
+    if cur:
+        out.append("".join(cur).strip())
+    return out
+
+def split_eq(s):
+    depth, quote, esc = 0, False, False
+    for i, ch in enumerate(s):
+        if esc:
+            esc = False; continue
+        if ch == "\\":
+            esc = True; continue
+        if ch == '"':
+            quote = not quote; continue
+        if not quote:
+            if ch == "(":
+                depth += 1
+            elif ch == ")" and depth:
+                depth -= 1
+            elif ch == "=" and depth == 0:
+                return s[:i].strip(), s[i + 1:].strip()
+    return s.strip(), ""
+
+keys = []
+values = defaultdict(list)
+bad_parts = []
+for item in split_top_level(body):
+    if not item:
+        continue
+    key, value = split_eq(item)
+    if not key or not value:
+        bad_parts.append(item[:80])
+        continue
+    keys.append(key)
+    values[key].append(value)
+
+if bad_parts:
+    print("  WARN: could not parse these setting entries:")
+    for item in bad_parts[:10]:
+        print(f"    {item}")
+else:
+    print("  parse=ok")
+
+dupes = [key for key, count in Counter(keys).items() if count > 1]
+if dupes:
+    print("  WARN: duplicate keys found; Palworld may use a different copy than the web/script shows:")
+    for key in sorted(dupes):
+        print(f"    {key}: {' -> '.join(values[key])}")
+else:
+    print("  duplicate_keys=none")
+
+important = [
+    "bEnableFastTravel",
+    "bIsFastTravelDisabled",
+    "bEnableFastTravelOnlyBaseCamp",
+    "bAllowGlobalPalboxImport",
+    "bAllowGlobalPalboxExport",
+    "Difficulty",
+]
+for key in important:
+    if values.get(key):
+        print(f"  raw_last_{key}={values[key][-1]}")
+    else:
+        print(f"  raw_last_{key}=missing")
+PY
+}
+
 worldoption_root() { printf '%s/Pal/Saved/SaveGames' "$(server_dir)"; }
 
 find_worldoption_saves() {
   local root
   root="$(worldoption_root)"
   [[ -d "$root" ]] || return 0
-  find "$root" -type f -name 'WorldOption.sav' -print 2>/dev/null | sort
+  find "$root" -type f \( -iname 'WorldOption.sav' -o -iname 'WorldOptions.sav' -o -iname '*WorldOption*.sav' \) -print 2>/dev/null | sort -u
 }
 
 worldoption_status() {
@@ -912,7 +1027,7 @@ worldoption_status() {
   echo "  bAllowGlobalPalboxImport=$(get_setting bAllowGlobalPalboxImport || printf 'missing')"
   echo "  bAllowGlobalPalboxExport=$(get_setting bAllowGlobalPalboxExport || printf 'missing')"
   echo
-  echo "WorldOption.sav override check:"
+  echo "WorldOption/WorldOptions.sav override check:"
   local found="false"
   while IFS= read -r file; do
     [[ -n "$file" ]] || continue
@@ -920,11 +1035,11 @@ worldoption_status() {
     warn "Found override file: $file"
   done < <(find_worldoption_saves)
   if [[ "$found" == "true" ]]; then
-    warn "WorldOption.sav can override gameplay/world settings from PalWorldSettings.ini."
+    warn "WorldOption/WorldOptions.sav can override gameplay/world settings from PalWorldSettings.ini."
     warn "This commonly blocks Global Palbox import/export changes on existing or migrated worlds."
-    warn "Use Settings -> Disable WorldOption.sav overrides to make PalWorldSettings.ini win."
+    warn "Use Settings -> Disable WorldOption/WorldOptions.sav overrides to make PalWorldSettings.ini win."
   else
-    ok "No WorldOption.sav override files found."
+    ok "No WorldOption/WorldOptions.sav override files found."
   fi
 }
 
@@ -971,6 +1086,9 @@ settings_diagnostics() {
     warn "Expected config file is missing."
   fi
   echo
+  echo "Settings file format diagnostics:"
+  settings_format_diagnostics
+  echo
   echo "Other PalWorldSettings.ini files found under /opt, /home, and /root:"
   find /opt /home /root -type f -name 'PalWorldSettings.ini' -print 2>/dev/null | sort | sed 's/^/  /' || true
   echo
@@ -985,13 +1103,13 @@ disable_worldoption_overrides() {
     [[ -n "$file" ]] && files+=("$file")
   done < <(find_worldoption_saves)
   if [[ ${#files[@]} -eq 0 ]]; then
-    ok "No WorldOption.sav override files found."
+    ok "No WorldOption/WorldOptions.sav override files found."
     return 0
   fi
-  warn "This will rename WorldOption.sav files so PalWorldSettings.ini controls world settings."
+  warn "This will rename WorldOption/WorldOptions.sav files so PalWorldSettings.ini controls world settings."
   warn "Existing world/build/player saves are kept. The renamed override files can be restored manually if needed."
   if [[ "$FORCE" != "true" && -t 0 ]]; then
-    prompt_yes_no "Back up saves, stop Palworld, disable WorldOption.sav overrides, and start again" "y" || return 0
+    prompt_yes_no "Back up saves, stop Palworld, disable WorldOption/WorldOptions.sav overrides, and start again" "y" || return 0
   fi
   backup "pre-worldoption-disable-$(date +%Y%m%d-%H%M%S)" || warn "Backup failed; continuing with override rename."
   stop_server || warn "Stop did not finish cleanly; continuing with override rename."
@@ -2378,8 +2496,8 @@ Settings
 3) Set custom Key=Value pairs
 4) Apply preset
 5) Guided advanced settings
-6) Check WorldOption.sav setting overrides
-7) Disable WorldOption.sav overrides
+6) Check WorldOption/WorldOptions.sav setting overrides
+7) Disable WorldOption/WorldOptions.sav overrides
 8) Enable Global Palbox safely
 9) Enable fast travel safely
 10) Settings diagnostics
