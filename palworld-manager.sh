@@ -950,6 +950,53 @@ enable_global_palbox_safely() {
   warn "Reconnect to Palworld before testing Global Palbox."
 }
 
+enable_fast_travel_safely() {
+  require_root
+  load_state
+  local was_active="false"
+  server_service_active && was_active="true"
+  warn "This will enable fast travel statues in PalWorldSettings.ini."
+  warn "If WorldOption.sav overrides exist, they will be renamed so the ini settings can apply."
+  if [[ "$FORCE" != "true" && -t 0 ]]; then
+    prompt_yes_no "Back up saves, stop Palworld if needed, enable fast travel, and start again" "y" || return 0
+  fi
+  backup "pre-fast-travel-enable-$(date +%Y%m%d-%H%M%S)" || warn "Backup failed; continuing with fast travel update."
+  if [[ "$was_active" == "true" ]]; then
+    local old_message="$MESSAGE"
+    MESSAGE="Applying fast travel settings"
+    stop_server || warn "Stop did not finish cleanly; continuing with settings update."
+    MESSAGE="$old_message"
+  fi
+  set_settings_assoc \
+    "bEnableFastTravel=True" \
+    "bIsFastTravelDisabled=False" \
+    "bEnableFastTravelOnlyBaseCamp=False"
+  local -a files=()
+  while IFS= read -r file; do
+    [[ -n "$file" ]] && files+=("$file")
+  done < <(find_worldoption_saves)
+  if [[ ${#files[@]} -gt 0 ]]; then
+    local stamp target
+    stamp="$(date +%Y%m%d-%H%M%S)"
+    for file in "${files[@]}"; do
+      [[ -f "$file" ]] || continue
+      target="${file}.disabled-${stamp}"
+      mv "$file" "$target"
+      ok "Renamed $(basename "$file") -> $(basename "$target")"
+    done
+  fi
+  if [[ "$was_active" == "true" ]]; then
+    start_server || warn "Start failed; check service logs."
+  else
+    warn "Palworld was not running. Start it when you are ready."
+  fi
+  echo "Fast travel settings currently written to ini:"
+  echo "  bEnableFastTravel=$(get_setting bEnableFastTravel || printf 'missing')"
+  echo "  bIsFastTravelDisabled=$(get_setting bIsFastTravelDisabled || printf 'missing')"
+  echo "  bEnableFastTravelOnlyBaseCamp=$(get_setting bEnableFastTravelOnlyBaseCamp || printf 'missing')"
+  warn "Reconnect to Palworld before testing fast travel."
+}
+
 apply_install_settings() {
   ensure_settings
   if [[ -z "$ADMIN_PASSWORD" ]]; then
@@ -2236,6 +2283,7 @@ Settings
 6) Check WorldOption.sav setting overrides
 7) Disable WorldOption.sav overrides
 8) Enable Global Palbox safely
+9) Enable fast travel safely
 0) Back
 
 EOF
@@ -2302,6 +2350,10 @@ EOF
         ;;
       8)
         enable_global_palbox_safely
+        pause_menu
+        ;;
+      9)
+        enable_fast_travel_safely
         pause_menu
         ;;
       0) return ;;
@@ -2620,6 +2672,7 @@ case "$ACTION" in
   worldoption-status) load_state; worldoption_status ;;
   worldoption-disable) load_state; disable_worldoption_overrides ;;
   global-palbox-enable) load_state; enable_global_palbox_safely ;;
+  fast-travel-enable) load_state; enable_fast_travel_safely ;;
   set) load_state; [[ ${#POSITIONAL[@]} -gt 0 ]] || fail "Use: set Key=Value ..."; set_settings_assoc "${POSITIONAL[@]}" ;;
   preset) load_state; apply_preset ;;
   firewall) load_state; configure_firewall ;;

@@ -134,14 +134,15 @@ Other useful presets:
 If fast travel statues show `Disabled due to World Settings`, open:
 
 ```text
-Settings and presets -> Guided advanced settings -> Bases/guilds/world cleanup
+Settings and presets -> Enable fast travel safely
 ```
 
-Then enable fast travel statues. The script writes both compatible fast-travel keys:
+That creates a backup, stops Palworld if it is running, writes the fast-travel keys while the game is not holding the config in memory, disables any `WorldOption.sav` override if present, and starts Palworld again. The script writes:
 
 ```ini
 bEnableFastTravel=True
 bIsFastTravelDisabled=False
+bEnableFastTravelOnlyBaseCamp=False
 ```
 
 Restart Palworld after saving.
