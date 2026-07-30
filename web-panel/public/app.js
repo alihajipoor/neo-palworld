@@ -672,7 +672,7 @@ bind("#presetForm", "submit", async (event) => {
   event.preventDefault();
   const data = Object.fromEntries(new FormData(event.target));
   await api("/api/admin/preset", { method: "POST", body: JSON.stringify(data) })
-    .then(async () => { toast("Preset applied. Restart required."); await loadAdmin(); })
+    .then(async () => { toast("Preset applied. Server restarted if it was running."); await loadAdmin(); })
     .catch((error) => toast(error.message));
 });
 
@@ -680,7 +680,7 @@ bind("#settingsForm", "submit", async (event) => {
   event.preventDefault();
   const settings = Object.fromEntries([...new FormData(event.target)].filter(([, value]) => value !== ""));
   await api("/api/admin/settings", { method: "POST", body: JSON.stringify({ settings }) })
-    .then(async () => { toast("Settings saved. Restart required."); await loadAdmin(); })
+    .then(async () => { toast("Settings applied. Server restarted if it was running."); await loadAdmin(); })
     .catch((error) => toast(error.message));
 });
 

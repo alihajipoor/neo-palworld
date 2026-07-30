@@ -96,6 +96,8 @@ The menu can:
 - Apply presets.
 - Use guided advanced settings for gameplay rates, survival/combat, bases/guilds/world travel, PvP switches, and server identity.
 
+Settings are applied safely. If Palworld is running, the manager stops the service before editing `PalWorldSettings.ini`, writes the requested values, then starts the service again. This prevents Palworld from writing old in-memory settings back over your changes during shutdown.
+
 Available presets:
 
 - `launch-public`

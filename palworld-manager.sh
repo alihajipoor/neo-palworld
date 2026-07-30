@@ -760,6 +760,22 @@ PY
 }
 
 set_settings_assoc() {
+  local was_active="false"
+  if [[ "$ROOTLESS" != "true" ]] && server_service_active; then
+    require_root
+    was_active="true"
+    warn "Palworld is running. Stopping before writing settings so shutdown cannot overwrite your changes."
+    local old_message="$MESSAGE"
+    MESSAGE="Applying server settings"
+    if ! stop_server; then
+      MESSAGE="$old_message"
+      fail "Palworld did not stop cleanly; settings were not changed."
+    fi
+    MESSAGE="$old_message"
+    if server_service_active; then
+      fail "Palworld is still running; refusing to edit settings while the server can overwrite them."
+    fi
+  fi
   ensure_settings
   local json
   json="{"
@@ -775,6 +791,10 @@ set_settings_assoc() {
   json+="}"
   python_edit_settings "$json"
   ok "Updated PalWorldSettings.ini."
+  if [[ "$was_active" == "true" ]]; then
+    start_server
+    warn "Settings were applied with a full stop/start. Reconnect before testing."
+  fi
 }
 
 get_setting() {

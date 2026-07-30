@@ -646,7 +646,7 @@ async function routeAdmin(req, res, url, user) {
     if (!pairs.length) return json(res, 400, { ok: false, error: "No valid settings were provided." });
     const result = await control("set", pairs);
     audit("settings", pairs.join(", "));
-    return json(res, 200, { ok: true, restartRequired: true, result });
+    return json(res, 200, { ok: true, applied: true, result });
   }
 
   if (req.method === "POST" && url.pathname === "/api/admin/preset") {
@@ -655,7 +655,7 @@ async function routeAdmin(req, res, url, user) {
     if (!/^[a-z0-9-]+$/.test(preset)) return json(res, 400, { ok: false, error: "Invalid preset name." });
     const result = await control("preset", [preset]);
     audit("preset", preset);
-    return json(res, 200, { ok: true, restartRequired: true, result });
+    return json(res, 200, { ok: true, applied: true, result });
   }
 
   if (req.method === "POST" && url.pathname === "/api/admin/shop") {
