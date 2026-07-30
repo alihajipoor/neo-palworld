@@ -1480,34 +1480,35 @@ api_call() {
   local method="$1"
   local endpoint="$2"
   local body="${3:-}"
-  local pass base url
+  local pass base url output last_error
   load_state
   pass="$(api_password)"
   for base in "http://${API_HOST}:${REST_PORT}/v1/api" "http://${API_HOST}:${REST_PORT}"; do
     url="${base}/${endpoint#/}"
+    local -a curl_args=(-fsS --http1.1 --connect-timeout 5 --max-time 20 -u "${API_USER}:${pass}" -H 'Content-Type: application/json' -X "$method")
     if [[ -n "$body" ]]; then
-      if curl -fsS -u "${API_USER}:${pass}" -H 'Content-Type: application/json' -X "$method" -d "$body" "$url"; then
-        echo
-        return 0
-      fi
-    else
-      if curl -fsS -u "${API_USER}:${pass}" -X "$method" "$url"; then
-        echo
-        return 0
-      fi
+      curl_args+=(--data-raw "$body")
+    elif [[ "$method" != "GET" && "$method" != "HEAD" ]]; then
+      curl_args+=(--data-raw "")
     fi
+    if output="$(curl "${curl_args[@]}" "$url" 2>&1)"; then
+      [[ -n "$output" ]] && printf '%s\n' "$output"
+      return 0
+    fi
+    last_error="$output"
   done
+  [[ -n "${last_error:-}" ]] && printf '%s\n' "$last_error" >&2
   return 1
 }
 
 save_world() {
-  api_call POST save >/dev/null && ok "World save requested." || return 1
+  api_call POST save >/dev/null && ok "World save requested." || { warn "REST save request failed."; return 1; }
 }
 
 shutdown_api() {
   local body
   body="$(jq -nc --arg msg "$MESSAGE" --argjson wait "$SHUTDOWN_WAIT" '{waittime:$wait,message:$msg}')"
-  api_call POST shutdown "$body"
+  api_call POST shutdown "$body" >/dev/null && ok "Graceful shutdown requested." || { warn "REST graceful shutdown request failed."; return 1; }
 }
 
 backup() {
