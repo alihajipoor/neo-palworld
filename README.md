@@ -106,6 +106,14 @@ Settings and presets -> Settings diagnostics
 
 That report shows the exact manager path, active systemd `ExecStart`, expected config file, current important setting values, duplicate `PalWorldSettings.ini` files, INI format/duplicate-key health, and `WorldOption.sav`/`WorldOptions.sav` status.
 
+If diagnostics reports that `PalWorldSettings.ini` is not exactly 2 lines, repair it from:
+
+```text
+Settings and presets -> Repair PalWorldSettings.ini format
+```
+
+That action keeps your current settings, backs up the server, stops Palworld if needed, rewrites the file into Palworld's strict 2-line format, and starts the server again.
+
 Available presets:
 
 - `launch-public`

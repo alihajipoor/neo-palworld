@@ -754,7 +754,7 @@ for k, v in updates.items():
     settings[k] = raw_value(k, v)
 
 body = ",".join(f"{k}={v}" for k, v in settings.items())
-new = text[:m.start()] + "OptionSettings=(" + body + ")" + text[m.end():]
+new = "[/Script/Pal.PalGameWorldSettings]\nOptionSettings=(" + body + ")\n"
 open(path, "w", encoding="utf-8").write(new)
 PY
 }
@@ -951,19 +951,22 @@ def split_eq(s):
     depth, quote, esc = 0, False, False
     for i, ch in enumerate(s):
         if esc:
-            esc = False; continue
+            esc = False
+            continue
         if ch == "\\":
-            esc = True; continue
+            esc = True
+            continue
         if ch == '"':
-            quote = not quote; continue
+            quote = not quote
+            continue
         if not quote:
             if ch == "(":
                 depth += 1
             elif ch == ")" and depth:
                 depth -= 1
             elif ch == "=" and depth == 0:
-                return s[:i].strip(), s[i + 1:].strip()
-    return s.strip(), ""
+                return s[:i].strip(), s[i + 1:].strip(), True
+    return s.strip(), "", False
 
 keys = []
 values = defaultdict(list)
@@ -971,8 +974,8 @@ bad_parts = []
 for item in split_top_level(body):
     if not item:
         continue
-    key, value = split_eq(item)
-    if not key or not value:
+    key, value, has_eq = split_eq(item)
+    if not key or not has_eq:
         bad_parts.append(item[:80])
         continue
     keys.append(key)
@@ -1093,6 +1096,36 @@ settings_diagnostics() {
   find /opt /home /root -type f -name 'PalWorldSettings.ini' -print 2>/dev/null | sort | sed 's/^/  /' || true
   echo
   worldoption_status
+}
+
+repair_settings_file_format() {
+  require_root
+  load_state
+  local was_active="false"
+  server_service_active && was_active="true"
+  warn "This will rewrite PalWorldSettings.ini into Palworld's strict 2-line format."
+  warn "It keeps the current settings values, creates a backup, and restarts Palworld if it is running."
+  if [[ "$FORCE" != "true" && -t 0 ]]; then
+    prompt_yes_no "Back up saves, stop Palworld if needed, repair the settings file, and start again" "y" || return 0
+  fi
+  backup "pre-settings-format-repair-$(date +%Y%m%d-%H%M%S)" || warn "Backup failed; continuing with settings format repair."
+  if [[ "$was_active" == "true" ]]; then
+    local old_message="$MESSAGE"
+    MESSAGE="Repairing settings format"
+    stop_server || warn "Stop did not finish cleanly; continuing with settings format repair."
+    MESSAGE="$old_message"
+  fi
+  ensure_settings
+  python_edit_settings "{}"
+  if [[ "$ROOTLESS" != "true" ]]; then
+    chown "$SERVER_USER:$SERVER_GROUP" "$(settings_file)" || true
+  fi
+  ok "Rewritten PalWorldSettings.ini in canonical 2-line format."
+  settings_format_diagnostics
+  if [[ "$was_active" == "true" ]]; then
+    start_server || warn "Start failed; check service logs."
+    warn "Reconnect before testing. Palworld only reads settings at server startup."
+  fi
 }
 
 disable_worldoption_overrides() {
@@ -2501,6 +2534,7 @@ Settings
 8) Enable Global Palbox safely
 9) Enable fast travel safely
 10) Settings diagnostics
+11) Repair PalWorldSettings.ini format
 0) Back
 
 EOF
@@ -2575,6 +2609,10 @@ EOF
         ;;
       10)
         settings_diagnostics
+        pause_menu
+        ;;
+      11)
+        repair_settings_file_format
         pause_menu
         ;;
       0) return ;;
@@ -2891,6 +2929,7 @@ case "$ACTION" in
   restore) load_state; restore_backup ;;
   settings) load_state; show_settings ;;
   settings-diagnostics) load_state; settings_diagnostics ;;
+  settings-repair) load_state; repair_settings_file_format ;;
   worldoption-status) load_state; worldoption_status ;;
   worldoption-disable) load_state; disable_worldoption_overrides ;;
   global-palbox-enable) load_state; enable_global_palbox_safely ;;
