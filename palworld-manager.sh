@@ -790,11 +790,40 @@ set_settings_assoc() {
   done
   json+="}"
   python_edit_settings "$json"
+  verify_settings_assoc "$@"
   ok "Updated PalWorldSettings.ini."
   if [[ "$was_active" == "true" ]]; then
     start_server
+    verify_settings_assoc "$@"
     warn "Settings were applied with a full stop/start. Reconnect before testing."
   fi
+}
+
+verify_settings_assoc() {
+  local kv key expected actual expected_norm actual_norm
+  for kv in "$@"; do
+    [[ "$kv" == *=* ]] || continue
+    key="${kv%%=*}"
+    expected="${kv#*=}"
+    actual="$(get_setting "$key" || true)"
+    expected_norm="$(normalize_setting_value "$expected")"
+    actual_norm="$(normalize_setting_value "$actual")"
+    if [[ "$expected_norm" != "$actual_norm" ]]; then
+      fail "Setting verification failed for $key: expected '$expected', but $(settings_file) contains '$actual'."
+    fi
+  done
+}
+
+normalize_setting_value() {
+  local value="$1"
+  value="${value%$'\r'}"
+  value="${value%\"}"
+  value="${value#\"}"
+  case "${value,,}" in
+    true) printf 'True' ;;
+    false) printf 'False' ;;
+    *) printf '%s' "$value" ;;
+  esac
 }
 
 get_setting() {
@@ -897,6 +926,55 @@ worldoption_status() {
   else
     ok "No WorldOption.sav override files found."
   fi
+}
+
+settings_diagnostics() {
+  load_state
+  echo "Settings diagnostics"
+  echo
+  echo "Manager script:"
+  echo "  $SCRIPT_PATH"
+  echo "Install dir:"
+  echo "  $INSTALL_DIR"
+  echo "Expected server dir:"
+  echo "  $(server_dir)"
+  echo "Expected active config:"
+  echo "  $(settings_file)"
+  echo
+  echo "systemd service:"
+  if have systemctl && systemctl list-unit-files "${SERVICE_NAME}.service" >/dev/null 2>&1; then
+    systemctl show "$SERVICE_NAME" -p FragmentPath -p ExecStart -p User -p WorkingDirectory --no-pager || true
+    local exec_text
+    exec_text="$(systemctl show "$SERVICE_NAME" -p ExecStart --value 2>/dev/null || true)"
+    if [[ "$exec_text" != *"$(server_dir)"* ]]; then
+      warn "The palworld.service ExecStart does not appear to use $(server_dir)."
+      warn "If the service starts another PalServer.sh, this manager is editing the wrong config."
+    fi
+  else
+    warn "palworld.service is not installed."
+  fi
+  echo
+  echo "Running PalServer processes:"
+  pgrep -af 'PalServer|PalServer-Linux' || warn "No PalServer process found."
+  echo
+  echo "Config file status:"
+  if [[ -f "$(settings_file)" ]]; then
+    ls -l "$(settings_file)"
+    stat -c '  modified=%y owner=%U group=%G mode=%a size=%s' "$(settings_file)" 2>/dev/null || true
+    echo "  bEnableFastTravel=$(get_setting bEnableFastTravel || printf 'missing')"
+    echo "  bIsFastTravelDisabled=$(get_setting bIsFastTravelDisabled || printf 'missing')"
+    echo "  bEnableFastTravelOnlyBaseCamp=$(get_setting bEnableFastTravelOnlyBaseCamp || printf 'missing')"
+    echo "  bAllowGlobalPalboxImport=$(get_setting bAllowGlobalPalboxImport || printf 'missing')"
+    echo "  bAllowGlobalPalboxExport=$(get_setting bAllowGlobalPalboxExport || printf 'missing')"
+    echo "  Difficulty=$(get_setting Difficulty || printf 'missing')"
+  else
+    warn "Expected config file is missing."
+  fi
+  echo
+  echo "Other PalWorldSettings.ini files found under /opt, /home, and /root:"
+  find /opt /home /root -type f -name 'PalWorldSettings.ini' -print 2>/dev/null | sort | sed 's/^/  /' || true
+  echo
+  worldoption_status
 }
 
 disable_worldoption_overrides() {
@@ -2304,6 +2382,7 @@ Settings
 7) Disable WorldOption.sav overrides
 8) Enable Global Palbox safely
 9) Enable fast travel safely
+10) Settings diagnostics
 0) Back
 
 EOF
@@ -2374,6 +2453,10 @@ EOF
         ;;
       9)
         enable_fast_travel_safely
+        pause_menu
+        ;;
+      10)
+        settings_diagnostics
         pause_menu
         ;;
       0) return ;;
@@ -2689,6 +2772,7 @@ case "$ACTION" in
   list-backups) load_state; list_backups ;;
   restore) load_state; restore_backup ;;
   settings) load_state; show_settings ;;
+  settings-diagnostics) load_state; settings_diagnostics ;;
   worldoption-status) load_state; worldoption_status ;;
   worldoption-disable) load_state; disable_worldoption_overrides ;;
   global-palbox-enable) load_state; enable_global_palbox_safely ;;

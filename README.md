@@ -98,6 +98,14 @@ The menu can:
 
 Settings are applied safely. If Palworld is running, the manager stops the service before editing `PalWorldSettings.ini`, writes the requested values, then starts the service again. This prevents Palworld from writing old in-memory settings back over your changes during shutdown.
 
+If settings still appear to revert, run:
+
+```text
+Settings and presets -> Settings diagnostics
+```
+
+That report shows the exact manager path, active systemd `ExecStart`, expected config file, current important setting values, duplicate `PalWorldSettings.ini` files, and `WorldOption.sav` status.
+
 Available presets:
 
 - `launch-public`
